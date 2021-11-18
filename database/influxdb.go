@@ -6,17 +6,24 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/influxdata/influxdb/client/v2"
 )
 
 type InfluxDb struct {
-	Host         string `json:"host"`
-	Port         int    `json:"port"`
-	DatabaseName string `json:"databaseName"`
-	Username     string `json:"username"`
-	Password     string `json:"password"`
+	Host            string          `json:"host"`
+	Port            int             `json:"port"`
+	DatabaseName    string          `json:"databaseName"`
+	Username        string          `json:"username"`
+	Password        string          `json:"password"`
+	RetentionPolicy RetentionPolicy `json:"retentionPolicy"`
+}
+
+type RetentionPolicy struct {
+	Name     string `json:"name"`
+	Duration string `json:"duration"`
 }
 
 var (
@@ -62,7 +69,7 @@ func (influxDb InfluxDb) Initialize() error {
 		return err
 	}
 
-	createDbErr := createDatabase(influxDb.DatabaseName)
+	createDbErr := createDatabase(influxDb.DatabaseName, influxDb.RetentionPolicy)
 
 	if createDbErr != nil {
 		if createDbErr.Error() != "database already exists" {
@@ -200,9 +207,20 @@ func (influxDb InfluxDb) GetMeanResponseTime(Url string, span int) (float64, err
 	return 0, errors.New("error")
 }
 
-func createDatabase(databaseName string) error {
+func createDatabase(databaseName string, retentionPolicy RetentionPolicy) error {
 
-	_, err := queryDB(fmt.Sprintf("create database %s", databaseName), "")
+	var builder strings.Builder
+	builder.WriteString("create database ")
+	builder.WriteString(databaseName)
+	if retentionPolicy.Duration != "" {
+		builder.WriteString(" with ")
+		builder.WriteString(retentionPolicy.Duration)
+	}
+	if retentionPolicy.Name != "" {
+		builder.WriteString(" name ")
+		builder.WriteString(retentionPolicy.Name)
+	}
+	_, err := queryDB(builder.String(), "")
 
 	return err
 }
