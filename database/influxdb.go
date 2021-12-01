@@ -213,7 +213,7 @@ func createDatabase(databaseName string, retentionPolicy RetentionPolicy) error 
 	builder.WriteString("create database ")
 	builder.WriteString(databaseName)
 	if retentionPolicy.Duration != "" {
-		builder.WriteString(" with ")
+		builder.WriteString(" with duration ")
 		builder.WriteString(retentionPolicy.Duration)
 	}
 	if retentionPolicy.Name != "" {
